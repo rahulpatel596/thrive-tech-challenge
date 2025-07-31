@@ -1,46 +1,19 @@
-import { useEffect, useState } from "react";
+import {useState, useEffect} from 'react'
 import './App.css'
-import { type User } from './types/user'
-import { generateUsers } from "./utils/generateUser";
-
+import UserTable from "./components/UserTable";
+import { getEnhancedUsers } from './utils/generateUser';
+import type { EnhancedUser } from './types/user';
 
 const App = () => {
-  const [users, setUsers] = useState<User[]>([]);
-
+  const [users, setUsers] = useState<EnhancedUser[]>([])
   useEffect(() => {
-    const data = generateUsers(500);
-    setUsers(data);
-  }, []);
+    const data = getEnhancedUsers(500);
+    setUsers(data)
+  }, [])
 
   return (
     <>
-      <div>
-        <h1>Users</h1>
-        <div>
-          <table>
-            <thead>
-              <tr>
-                <th>
-                  FirstName
-                </th>
-                <th>
-                  LastName
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user: User) => (
-                <>
-                  <tr key={user.id}>
-                    <td>{user.firstName}</td>
-                    <td>{user.lastName}</td>
-                  </tr>
-                </>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          <UserTable data={users}/>
     </>
   )
 }
