@@ -26,6 +26,15 @@
 
 ## Implementation details
 
+**Overview**: I have used ShadCN to design beautiful Table UI, @tanstack/react-table to handle table logic and state management, and @tanstack/react-virtual to handle virtualization, Drag/Drop column using native HTML and implemented simple infinite scroll behaviour.
+
+### @tanstack/react-table
+- React table does not handle UI part, It focuses on logic and state of the table and not component/styling part of the table
+- We define our columns using `accessorKey` and `id`, along with other related options
+- `useReactTable` is the core hook that returns all the state and functions needed to build the table UI
+- The table exposes helper methods like `getHeaderGroups()`, `getRowModel()`, and `getVisibleCells()` which we use to render headers and rows
+- Sorting is handled using `getSortedRowModel()` and `onSortingChange`. We also use `column.getToggleSortingHandler()` for interactive header sorting
+
 ### Infinite scroll + virtualization
 - Initially loads 100 users
 - As the user scrolls down, more users are generated and appended to the userlist
