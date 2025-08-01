@@ -90,7 +90,7 @@ const UserTable = () => {
                 ref={tableContainerRef}
                 className="h-full overflow-auto"
             >
-                <Table className="bg-white-200 relative w-full" style={{ width: table.getCenterTotalSize() }}>
+                <Table className="bg-white-200 relative w-full">
                     <TableHeader className="bg-gray-300 sticky top-0 z-10">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
