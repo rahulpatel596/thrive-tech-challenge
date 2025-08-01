@@ -1,14 +1,14 @@
 import { faker } from "@faker-js/faker";
 import {type User, type EnhancedUser} from '../types/user'
 
-export const generateUsers = (count: number): User[] => {
+export const generateUsers = (count: number, offset = 0): User[] => {
   return Array.from({ length: count }, (_, i) => {
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
     const registeredDate = faker.date.past({ years: 5 });
 
     return {
-      id: i + 1,
+      id: i + offset + 1,
       firstName,
       lastName,
       email: faker.internet.email({ firstName, lastName }),
@@ -18,8 +18,9 @@ export const generateUsers = (count: number): User[] => {
   });
 };
 
-export const getEnhancedUsers = (count: number): EnhancedUser[] => {
-  return generateUsers(count).map((user: User) => {
+export const getEnhancedUsers = (count: number, offset = 0 ): EnhancedUser[] => {
+  console.log("Getting more users")
+  return generateUsers(count, offset).map((user: User) => {
     const dsr = Math.floor(
       (new Date().getTime() - new Date(user.registeredDate).getTime()) /
         (1000 * 60 * 60 * 24)

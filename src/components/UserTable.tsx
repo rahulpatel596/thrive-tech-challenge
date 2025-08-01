@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
     Table,
     TableHeader,
@@ -12,41 +12,46 @@ import {
     getCoreRowModel,
     getSortedRowModel,
     flexRender,
-    type ColumnDef,
     type SortingState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { type EnhancedUser } from "../types/user";
+import { getEnhancedUsers } from '@/utils/generateUser';
+import { UserColumnDefinition } from "@/utils/constants"
 
-type Props = {
-    data: EnhancedUser[];
-};
-
-const UserTable = ({ data }: Props) => {
+const UserTable = () => {
+    const INITIAL_DATA_SIZE = 100
+    const CHUNK_SIZE = 100
+    const MAX_USERS = 1000
     const ROW_HEIGHT = 48;
     const OVERSCAN_COUNT = 10;
-    const [sorting, setSorting] = useState<SortingState>([]);
-    const tableContainerRef = useRef<HTMLDivElement>(null);
 
-    const columns = useMemo<ColumnDef<EnhancedUser>[]>(() => [
-        { accessorKey: "id", header: "ID" },
-        { accessorKey: "firstName", header: "First Name" },
-        { accessorKey: "lastName", header: "Last Name" },
-        { accessorKey: "fullName", header: "Full Name" },
-        { accessorKey: "email", header: "Email" },
-        { accessorKey: "city", header: "City" },
-        { accessorKey: "registeredDate", header: "Registered Date" },
-        { accessorKey: "dsr", header: "DSR" },
-    ], []);
+    const [users, setUsers] = useState<EnhancedUser[]>(() => getEnhancedUsers(INITIAL_DATA_SIZE));
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [columnOrder, setColumnOrder] = useState<string[]>([
+        'id', 'firstName', 'lastName', 'fullName', 'email', 'city', 'registeredDate', 'dsr'
+    ]);
+    const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
+    const tableContainerRef = useRef(null);
+
+    const fetchUsers = () => {
+        if (users.length >= MAX_USERS) return;
+        const newUsers = getEnhancedUsers(CHUNK_SIZE, users.length);
+        setUsers((prev) => [...prev, ...newUsers]);
+    };
+
+    const reorderedColumns = columnOrder
+        .map((columnId) => UserColumnDefinition.find((col) => col.id === columnId)!)
 
     const table = useReactTable({
-        data,
-        columns,
+        data: users,
+        columns: reorderedColumns,
         state: { sorting },
         onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        enableColumnResizing: false
     });
 
     const { rows } = table.getRowModel();
@@ -60,20 +65,45 @@ const UserTable = ({ data }: Props) => {
 
     const virtualItems = virtualizer.getVirtualItems();
 
+    useEffect(() => {
+        const lastItem = virtualItems.at(-1);
+        if (lastItem && lastItem.index >= users.length - 10) {
+            fetchUsers();
+        }
+    }, [virtualItems, users]);
+
+    const handleDrop = useCallback((e: React.DragEvent, targetColumnId: string) => {
+        e.preventDefault();
+        if (!draggedColumnId || draggedColumnId === targetColumnId) return;
+        const oldIndex = columnOrder.indexOf(draggedColumnId);
+        const newIndex = columnOrder.indexOf(targetColumnId);
+        const newOrder = [...columnOrder];
+        newOrder.splice(oldIndex, 1);
+        newOrder.splice(newIndex, 0, draggedColumnId);
+        setColumnOrder(newOrder);
+        setDraggedColumnId(null);
+    }, [draggedColumnId, columnOrder]);
+
     return (
         <div className="h-[90vh] border border-solid rounded-md overflow-hidden">
             <div
                 ref={tableContainerRef}
                 className="h-full overflow-auto"
             >
-                <Table className="bg-white-200 relative">
+                <Table className="bg-white-200 relative" style={{ width: table.getCenterTotalSize() }}>
                     <TableHeader className="bg-gray-300 sticky top-0 z-10">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
                                     <TableHead
+                                        style={{ width: header.getSize() }}
                                         key={header.id}
                                         onClick={header.column.getToggleSortingHandler()}
+                                        draggable
+                                        onDragStart={() => setDraggedColumnId(header.id)}
+                                        onDragOver={(e) => { e.preventDefault(); }}
+                                        onDrop={(e) => handleDrop(e, header.id)}
+                                        onDragEnd={() => { setDraggedColumnId(null) }}
                                         className="cursor-pointer"
                                     >
                                         <div className="flex items-center">
@@ -97,11 +127,9 @@ const UserTable = ({ data }: Props) => {
 
                         {virtualItems.length > 0 && (
                             <TableRow style={{
-                                padding: 0,
-                                border: 'none',
                                 height: `${virtualItems[0]?.start ?? 0}px`
-                            }} aria-hidden="true">
-                                <TableCell className='p-0 border-none' colSpan={columns.length} />
+                                }}>
+                                <TableCell className='p-0 border-none' colSpan={UserColumnDefinition.length} />
                             </TableRow>
                         )}
 
@@ -110,7 +138,7 @@ const UserTable = ({ data }: Props) => {
                             return (
                                 <TableRow key={row.id} className="h-12">
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id} className='text-left'>
+                                        <TableCell key={cell.id} style={{ width: cell.column.getSize() }} className='text-left'>
                                             {flexRender(
                                                 cell.column.columnDef.cell,
                                                 cell.getContext(),
@@ -127,7 +155,7 @@ const UserTable = ({ data }: Props) => {
                                 border: 'none',
                                 height: `${virtualizer.getTotalSize() - (virtualItems[virtualItems.length - 1]?.end ?? 0)}px`
                             }}>
-                                <TableCell className='p-0 border-none' colSpan={columns.length}></TableCell>
+                                <TableCell className='p-0 border-none' colSpan={UserColumnDefinition.length}></TableCell>
                             </TableRow>
                         )}
                     </TableBody>
