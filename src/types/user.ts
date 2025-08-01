@@ -11,3 +11,5 @@ export type EnhancedUser = User & {
   fullName: string;
   dsr: number;
 }
+
+export type CustomColumnMeta = {label: string};

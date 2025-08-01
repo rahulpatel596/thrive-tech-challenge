@@ -16,7 +16,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import { type EnhancedUser } from "../types/user";
+import { type EnhancedUser, type CustomColumnMeta } from "../types/user";
 import { getEnhancedUsers } from '@/utils/generateUser';
 import { UserColumnDefinition } from "@/utils/constants"
 
@@ -105,9 +105,9 @@ const UserTable = () => {
                                         onDrop={(e) => handleDrop(e, header.id)}
                                         onDragEnd={() => { setDraggedColumnId(null) }}
                                         className="cursor-pointer"
-                                    >
+                                    > 
                                         <div className="flex items-center">
-                                            <span>
+                                            <span title={`${(header?.column?.columnDef?.meta as CustomColumnMeta)?.label ?? ''}`}>
                                                 {flexRender(header.column.columnDef.header, header.getContext())}
                                             </span>
                                             <span className='ml-1'>
